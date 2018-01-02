@@ -1,0 +1,44 @@
+SESSIONS
+sessions = [('ses1', 5), ('ses2', 6), ('ses3', 7)]
+
+flag_of_new_session = 'h'
+s_ret = sessionStart(sessions)       #GUI session
+    print 'Size of session', s_ret[0]
+    print 'Session name ', s_ret[1]
+    
+    for sess in sessions:
+        if s_ret[0] == sess[1]:
+            flag_of_new_session = 's'
+
+
+
+
+
+------------------------------------------------------------
+    game = GamePlaying(proxy_object, nick)   #bez socketa
+    game.update_state(board)
+    game.update_scores(scores)
+    game.init_board()
+    time.sleep(random.randint(10,20))
+    
+    game.run()
+    game.update_board()
+    game.board.show_board()   ---------- mainloop.
+    #game.playing_game()
+
+Board_gui
+class Board(nick, matrix=None, table=None, finished = False)
++ initialize_frame(self)
++ initialize_board(self)      
++ show_board(self)			---   self.frame.mainloop()
++ set_board_number(self, i, j, value)
++ set_board_numbers(self, matrix)
++ get_last_move(self)			return self.last_move
++ EnterVal(self, e, a, b, ent)
++ Click(self, x)
++ draw_board_numbers(self)	--redraw
++ draw_table_score(self)	--redraw
++ set_table(self, table)
++ end_game(self)
+
+

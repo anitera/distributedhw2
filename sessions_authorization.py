@@ -134,4 +134,13 @@ def sessionStart(sessions, load=True):
         load_sessions()
     sessionsAuthorization(sessions_list, sessions)
     return session_chosen.getSessionId()
+
 '''
+
+if __name__== "__main__":
+    sessions = [('ses1', 5), ('ses2', 6), ('ses3', 7)]
+    s_ret = sessionStart(sessions)
+    print 'Size of session', s_ret[0]
+    print 'Session name ', s_ret[1]
+
+

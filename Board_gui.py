@@ -99,8 +99,10 @@ class Board():
             self.frame.quit()
         else:
             tkBox.showerror("Incorrect format", "Please enter number from 1 to 9")
+
     def get_val(self):
         return self.v.get()
+
     def Click(self, x):
         cell_column = (x.x) // self.cell_size
         cell_row = (x.y) // self.cell_size
