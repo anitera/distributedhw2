@@ -8,6 +8,7 @@ from sessions_authorization import *
 from Board_gui import *
 import time
 buffer_length = 5024
+from xmlrpclib import ServerProxy
 
 from protocol import *
 import pickle
@@ -40,6 +41,7 @@ invited = ''
 BD = True
 
 def advertise(s,p):
+    ''' Broadcast the game '''
     gamename = p
     global BD
     while BD:
@@ -47,6 +49,7 @@ def advertise(s,p):
         time.sleep(2)
 
 def games_available(s, gamelist):
+    ''' List of games available '''
     global BD
     s.setblocking(0)
     while BD:
@@ -65,8 +68,7 @@ def games_available(s, gamelist):
         
         time.sleep(2)
 
-        #if len(gamelist) == 2:
-         #   break
+
 if __name__ == '__main__':
 
     nick = enter_nickname()
@@ -96,17 +98,18 @@ if __name__ == '__main__':
                 name = raw_input("Game name:")
                 maxp = int(raw_input("Num players:"))
 
+		#Socket broadcast to everyone
                 s = socket(AF_INET, SOCK_DGRAM)
                 s.setsockopt(SOL_SOCKET, SO_BROADCAST,1 )
                 #s.bind( ('',54545) )
                 
-                
+                #Random to ckeck different games on the one computer
                 port = "122" + str(random.randint(11,19))
                 t = Thread(target=advertise, args = (s,port,))
                 t.start()
                 
 
-
+		#Socket for waiting players
                 msock = socket(AF_INET, SOCK_STREAM)
                 msock.bind(("", int(port)))
                 msock.listen(maxp)
@@ -126,17 +129,8 @@ if __name__ == '__main__':
                 t.join()
                 s.close()
                 
-                for ss in players:
-                    ss.send("game started!")
-                #s.settimeout(0.2)
-               # ttl = struct.pack('b', 1)
-               # s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl) 
-                   # data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE, 2)
-                    #if data:
-                     #   print "New player ", addr
-                      #  print data
-                       # break
-
+            
+		# Create RPC object
                 tservice = RPCService(name, maxp)
                 server = RPCThreading(("",int(port)+1 ), SimpleXMLRPCRequestHandler) #for working parallel
                 server.register_introspection_functions()
@@ -145,6 +139,11 @@ if __name__ == '__main__':
                 server.register_instance(tservice)
                 
                 server.serve_forever()
+
+                for ss in players:
+                    ss.send("game started!")
+
+
                        
 
             if inpt == "s":
@@ -172,6 +171,18 @@ if __name__ == '__main__':
                 global BD
                 BD = False
                 t.join()
+
+
+                try:
+        	    proxy = ServerProxy("http://%s:%d" % (dest[0], int(dest[1])+1))
+    		except KeyboardInterrupt:
+        	    LOG.warn('Ctrl+C issued, terminating')
+        	    exit(0)
+    		except Exception as e:
+        	    LOG.error('Communication error %s ' % str(e))
+        	    exit(1)
+
+		LOG.info('Connected to Mboard XMLRPC server!')
 
                 #s.sendto("Player1 connected!", (addr[0], 9999) )
                 
