@@ -38,7 +38,7 @@ BD = True
 def advertise(s):
     gamename = "game" + str(random.randint(1,10))
     while BD:
-        s.sendto(gamename, (DEFAULT_SERVER_INET_ADDR,DEFAULT_SERVER_PORT))
+        s.sendto(gamename, ('<broadcast>',DEFAULT_SERVER_PORT))
         time.sleep(2)
 
 
@@ -70,9 +70,10 @@ if __name__ == '__main__':
             if inpt == "h":
             
                 s = socket(AF_INET, SOCK_DGRAM)
-                s.bind( ('',0) )
                 s.setsockopt(SOL_SOCKET, SO_BROADCAST,1 )
-
+                #s.bind( ('',54545) )
+                
+                
                 t = Thread(target=advertise, args = (s,))
                 t.start()
                 
@@ -102,6 +103,7 @@ if __name__ == '__main__':
                 port = "2334" + str(random.randint(2,9))
                 
                 s = socket(AF_INET, SOCK_DGRAM)
+                s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 s.bind( ('', DEFAULT_SERVER_PORT ))
                 gamelist = []
                 while True:
