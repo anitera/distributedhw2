@@ -26,7 +26,10 @@ import struct
 import sys
 import thread
 
-import logging as log
+import logging
+FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
+logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+LOG = logging.getLogger()
 
 DEFAULT_SERVER_PORT = 5007
 DEFAULT_SERVER_INET_ADDR = '224.0.0.1'
@@ -35,13 +38,28 @@ DEFAULT_RCV_BUFFSIZE = 1024
 invited = ''
 BD = True
 
-def advertise(s):
-    gamename = "game" + str(random.randint(1,10))
+def advertise(s,p):
+    gamename = p
     while BD:
         s.sendto(gamename, ('<broadcast>',DEFAULT_SERVER_PORT))
         time.sleep(2)
 
+def games_available(s, gamelist):
+    while BD:
+        data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
 
+        if (addr[0],data) not in gamelist:
+            print "server discovered!"
+            gamelist.append((addr[0],data))
+            print addr
+        
+            print "Available games"
+            print gamelist
+        
+        time.sleep(2)
+
+        #if len(gamelist) == 2:
+         #   break
 if __name__ == '__main__':
 
     nick = enter_nickname()
@@ -68,24 +86,41 @@ if __name__ == '__main__':
         while True:
             inpt = raw_input("Host \ search (h \ s): ")
             if inpt == "h":
-            
+                name = raw_input("Game name:")
+                maxp = int(raw_input("Num players:"))
+
                 s = socket(AF_INET, SOCK_DGRAM)
                 s.setsockopt(SOL_SOCKET, SO_BROADCAST,1 )
                 #s.bind( ('',54545) )
                 
                 
-                t = Thread(target=advertise, args = (s,))
+                port = "122" + str(random.randint(11,19))
+                t = Thread(target=advertise, args = (s,port,))
                 t.start()
                 
 
+
                 msock = socket(AF_INET, SOCK_STREAM)
-                msock.bind(("", 13333))
-                msock.listen(1)
-                client, addr = msock.accept()
-                print "conenction from ", addr
+                msock.bind(("", int(port)))
+                msock.listen(maxp)
+                connected = 0
+                players = []
+                while connected < maxp:
+                    client, addr = msock.accept()
+
+                    print "conenction from ", addr, client
+                    connected +=1
+                    players.append(client)
+                    print "players ", connected,"/",maxp
+                
+                print "All players conencted! Game start!"
                 global BD
                 BD = False
                 t.join()
+                s.close()
+                
+                for ss in players:
+                    ss.send("game started!")
                 #s.settimeout(0.2)
                # ttl = struct.pack('b', 1)
                # s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl) 
@@ -95,30 +130,52 @@ if __name__ == '__main__':
                       #  print data
                        # break
 
-                break
+                self.tservice = RPCService(gamename, size)
+                self.server_sock = (args.laddr, args.port)
+                self.server = RPCThreading(self.server_sock, SimpleXMLRPCRequestHandler) #for working parallel
+                self.server.register_introspection_functions()
+
+                # Register all functions of the Transfer Service
+                self.server.register_instance(self.tservice)
+                self.start_main()
+
+                    def start_main(self):
+                        # start the RPC server
+
+                        try:
+                            self.server.serve_forever()
+                        except KeyboardInterrupt:
+                            LOG.info('Ctrl+C issued, terminating ...')
+                        finally:
+                            server.shutdown()       # Stop the serve-forever loop
+                            server.server_close()   # Close the sockets
+                        LOG.info('Terminating ...')
+
 
             if inpt == "s":
                 
                # host = "127.0.0." + str(random.randint(1,254))
-                port = "2334" + str(random.randint(2,9))
+
                 
                 s = socket(AF_INET, SOCK_DGRAM)
                 s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 s.bind( ('', DEFAULT_SERVER_PORT ))
                 gamelist = []
-                while True:
-                    data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
+                
+                t = Thread(target = games_available, args=(s, gamelist,))
+                t.start()
 
-                    if data not in gamelist:
-                        print "server discovered!"
-                        gamelist.append(data)
-                        print addr
-
-                    print "Available games"
-                    print gamelist
-                    time.sleep(2)
+                k = int(raw_input("Session #:")) #random.randint(0, len(gamelist))
+                dest = gamelist[k]
                 msock = socket(AF_INET, SOCK_STREAM)
-                msock.connect( (addr[0], 13333) )
+                msock.connect( (dest[0], int(dest[1])) )
+
+                resp = msock.recv(DEFAULT_RCV_BUFFSIZE)
+
+                print resp
+                
+                BD = False
+                t.join()
                 #s.sendto("Player1 connected!", (addr[0], 9999) )
                 
                 
@@ -128,9 +185,6 @@ if __name__ == '__main__':
 
  #               s.bind( (bind_addr, DEFAULT_SERVER_PORT) )
   #              data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
-
-                print "Server discovered!"
-                print addr
 
                 break
                 
