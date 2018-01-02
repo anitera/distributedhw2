@@ -38,7 +38,7 @@ BD = True
 def advertise(s):
     gamename = "game" + str(random.randint(1,10))
     while BD:
-        s.sendto(gamename, ('<broadcast>',DEFAULT_SERVER_PORT))
+        s.sendto(gamename, (DEFAULT_SERVER_INET_ADDR,DEFAULT_SERVER_PORT))
         time.sleep(2)
 
 
