@@ -28,6 +28,7 @@ import sys
 import thread
 from rpc_session import *
 import select
+from copy import deepcopy
 import logging
 FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -39,7 +40,7 @@ bind_addr = '0.0.0.0'
 DEFAULT_RCV_BUFFSIZE = 1024
 invited = ''
 BD = True
-
+GAME = True
 def advertise(s,p):
     ''' Broadcast the game '''
     gamename = p
@@ -67,6 +68,23 @@ def games_available(s, gamelist):
             print gamelist
         
         time.sleep(2)
+
+def render_board(srv):
+    cboard = None
+    while GAME:
+        board = srv.get_sparse()
+        if not board == cboard:
+            cboard = deepcopy(board)
+            print "Game board!"
+            print "___________________"
+            for i in board:
+                print "|".join(str(x) for x in i)
+                    
+        time.sleep(1)
+
+def run_server(server):
+
+    server.serve_forever()
 
 
 if __name__ == '__main__':
@@ -113,7 +131,7 @@ if __name__ == '__main__':
                 msock = socket(AF_INET, SOCK_STREAM)
                 msock.bind(("", int(port)))
                 msock.listen(maxp)
-                connected = 0
+                connected = 1
                 players = []
                 while connected < maxp:
                     client, addr = msock.accept()
@@ -129,7 +147,9 @@ if __name__ == '__main__':
                 t.join()
                 s.close()
                 
-            
+                for ss in players:
+                    ss.send("game started!")
+
 		# Create RPC object
                 tservice = RPCService(name, maxp)
                 server = RPCThreading(("",int(port)+1 ), SimpleXMLRPCRequestHandler) #for working parallel
@@ -138,12 +158,38 @@ if __name__ == '__main__':
                 # Register all functions of the Transfer Service
                 server.register_instance(tservice)
                 
-                server.serve_forever()
+                mt = Thread(target=run_server, args=(server,) )
+                mt.start()
+                
+                time.sleep(3)
 
-                for ss in players:
-                    ss.send("game started!")
+                board = Thread(target=render_board, args=(tservice,) )
+                board.start()
+                
+                if tservice.add_player(nick):
+                    LOG.info("Player %s added", nick)
 
+             
 
+                
+
+                v = int(raw_input("value:"))
+                i = int(raw_input("i:"))
+                j = int(raw_input("j:"))
+
+                tt = tservice.play_turn((i,j),v,nick)
+
+                while tt:
+                    v = int(raw_input("value:"))
+                    i = int(raw_input("i:"))
+                    j = int(raw_input("j:"))
+
+                    tt = tservice.play_turn((i,j),v,nick)
+                    print tt
+                    time.sleep(1)
+
+                board.join()
+                mt.join()
                        
 
             if inpt == "s":
@@ -183,6 +229,30 @@ if __name__ == '__main__':
         	    exit(1)
 
 		LOG.info('Connected to Mboard XMLRPC server!')
+
+                if proxy.add_player(nick):
+                    LOG.info("Player %s added", nick)
+                
+                time.sleep(3)
+
+                board = Thread(target=render_board, args=(proxy,) )
+                board.start()
+
+
+                v = int(raw_input("value:"))
+                i = int(raw_input("i:"))
+                j = int(raw_input("j:"))
+
+                tt = proxy.play_turn((i,j),v,nick)
+
+                while tt:
+                    v = int(raw_input("value:"))
+                    i = int(raw_input("i:"))
+                    j = int(raw_input("j:"))
+
+                    tt = proxy.play_turn((i,j),v,nick)
+                    print tt
+                    time.sleep(1)
 
                 #s.sendto("Player1 connected!", (addr[0], 9999) )
                 

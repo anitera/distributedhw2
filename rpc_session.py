@@ -29,7 +29,7 @@ class RPCService():
     def __init__(self, gamename, size):
 	self.gamesession = gamename
 	self.session_size = size
-	self.players = {}
+	self.players = [] # {}
 	self.scores = {}
 	self.status = False
 	question, answer = return_question_and_answer()
@@ -43,6 +43,9 @@ class RPCService():
 
     def get_total(self):
         return self.sudoku_full
+
+    def get_sparse(self):
+        return self.sudoku_sparse
 
     def set_cell(self, cell, value):
         self.sudoku_sparse[cell[0]][cell[1]] = value
@@ -62,9 +65,16 @@ class RPCService():
             return False
 
 
-    def add_player(self, name, socket):
-	self.players[name] = socket
+    def add_player(self, name):
+	#self.players[name] = socket
+        if name not in self.players:
+            self.players.append(name)
+        else:
+            LOG.error("Player name already exist!")
+            return False
+
 	self.scores[name] = 0
+        return True
 
     def remove_player(self, name, socket):
 	del self.players[name]
@@ -83,13 +93,15 @@ class RPCService():
 	LOG.info('matrix = {} ({}, {})'.format(board_ans[i][j], i, j))
 	LOG.info('value = {}'.format(value))
 	LOG.info('Checking cell...')
-	if board_ans == value:
+        if True:#board_ans == value:
             self.scores[name] += 1
-                    #self.session.set_cell(cell, value)
+            self.set_cell(cell, value)
         else: 
             self.scores[name] -= 1
 
         LOG.info('Turn played')
+
+        return not self.game_over()
 
 
     def update_clients_scores(self):
