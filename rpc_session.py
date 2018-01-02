@@ -39,6 +39,8 @@ class RPCService():
         #current state
 	self.sudoku_sparse = question
 
+        LOG.info("RPC instance created!")
+
     def get_total(self):
         return self.sudoku_full
 

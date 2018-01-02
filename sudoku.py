@@ -25,7 +25,8 @@ from socket import error as soc_err
 import struct
 import sys
 import thread
-
+from rpc_session import *
+import select
 import logging
 FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -40,14 +41,20 @@ BD = True
 
 def advertise(s,p):
     gamename = p
+    global BD
     while BD:
         s.sendto(gamename, ('<broadcast>',DEFAULT_SERVER_PORT))
         time.sleep(2)
 
 def games_available(s, gamelist):
+    global BD
+    s.setblocking(0)
     while BD:
-        data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
-
+        ready = select.select([s],[],[],2)
+        if ready[0]:
+            data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
+        else:
+            continue
         if (addr[0],data) not in gamelist:
             print "server discovered!"
             gamelist.append((addr[0],data))
@@ -130,27 +137,15 @@ if __name__ == '__main__':
                       #  print data
                        # break
 
-                self.tservice = RPCService(gamename, size)
-                self.server_sock = (args.laddr, args.port)
-                self.server = RPCThreading(self.server_sock, SimpleXMLRPCRequestHandler) #for working parallel
-                self.server.register_introspection_functions()
+                tservice = RPCService(name, maxp)
+                server = RPCThreading(("",int(port)+1 ), SimpleXMLRPCRequestHandler) #for working parallel
+                server.register_introspection_functions()
 
                 # Register all functions of the Transfer Service
-                self.server.register_instance(self.tservice)
-                self.start_main()
-
-                    def start_main(self):
-                        # start the RPC server
-
-                        try:
-                            self.server.serve_forever()
-                        except KeyboardInterrupt:
-                            LOG.info('Ctrl+C issued, terminating ...')
-                        finally:
-                            server.shutdown()       # Stop the serve-forever loop
-                            server.server_close()   # Close the sockets
-                        LOG.info('Terminating ...')
-
+                server.register_instance(tservice)
+                
+                server.serve_forever()
+                       
 
             if inpt == "s":
                 
@@ -173,9 +168,11 @@ if __name__ == '__main__':
                 resp = msock.recv(DEFAULT_RCV_BUFFSIZE)
 
                 print resp
-                
+
+                global BD
                 BD = False
                 t.join()
+
                 #s.sendto("Player1 connected!", (addr[0], 9999) )
                 
                 
@@ -194,6 +191,12 @@ if __name__ == '__main__':
         #s.send(DELIM.join([DISCONNECT]))
         s.close()
         msock.close()
+        LOG.info('Ctrl+C issued, terminating ...')
+    
+        server.shutdown()       # Stop the serve-forever loop
+        server.server_close()   # Close the sockets
+        LOG.info('Terminating ...')
+
 
         #HP = HostPort()
         #hostPortAuthorization(HP)
