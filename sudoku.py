@@ -230,8 +230,8 @@ if __name__ == '__main__':
 
 		LOG.info('Connected to Mboard XMLRPC server!')
 
-                if proxy.add_player(nick):
-                    LOG.info("Player %s added", nick)
+                gg = proxy.add_player(nick)
+                #    LOG.info("Player %s added", nick)
                 
                 time.sleep(3)
 

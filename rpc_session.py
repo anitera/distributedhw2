@@ -40,6 +40,10 @@ class RPCService():
 	self.sudoku_sparse = question
 
         LOG.info("RPC instance created!")
+        print "Game answer!"
+        print "___________________"
+        for i in answer:
+            print "|".join(str(x) for x in i)
 
     def get_total(self):
         return self.sudoku_full
@@ -93,7 +97,7 @@ class RPCService():
 	LOG.info('matrix = {} ({}, {})'.format(board_ans[i][j], i, j))
 	LOG.info('value = {}'.format(value))
 	LOG.info('Checking cell...')
-        if True:#board_ans == value:
+        if self.check_cell(cell, value):
             self.scores[name] += 1
             self.set_cell(cell, value)
         else: 
