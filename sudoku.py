@@ -107,22 +107,6 @@ if __name__ == '__main__':
 
     print "Your nickname: ", nick
 
-    '''
-    s = socket(AF_INET, SOCK_STREAM)
-
-    while True:
-        #inpt = raw_input("Enter dedicated host address [ip:port]: ")
-        HP = HostPort()
-        hostPortAuthorization(HP)
-        host, port = HP.getHostPort()
-        if port.isdigit():
-            port = int(port)
-            if s.connect_ex( (host, port) ) != 0:
-                print "Incorrect host address. Try again!"
-            else:
-                print "Connection established!"
-                break
-    ''' 
     try:
         while True:
             inpt = raw_input("Host \ search (h \ s): ")
@@ -176,8 +160,8 @@ if __name__ == '__main__':
                 mt.start()
                 
 
-                board = Thread(target=render_board, args=(tservice,) )
-                board.start()
+#                board = Thread(target=render_board, args=(tservice,) )
+ #               board.start()
                 
                 if tservice.add_player(nick):
                     LOG.info("Player %s added", nick)
@@ -189,26 +173,21 @@ if __name__ == '__main__':
                         break
                     else:
                         time.sleep(0.5)
-                
-                '''
-                v = int(raw_input("value:"))
-                i = int(raw_input("i:"))
-                j = int(raw_input("j:"))
-
-                tt = tservice.play_turn((i,j),v,nick)
-
-                while tt:
-                    v = int(raw_input("value:"))
-                    i = int(raw_input("i:"))
-                    j = int(raw_input("j:"))
-
-                    tt = tservice.play_turn((i,j),v,nick)
-                    print tt
-                    time.sleep(1)
-
-                board.join()
-                '''
+                        LOG.info("checkready")
+  
+                LOG.info("All players connected!")
+                b_init = tservice.get_sparse()
+                s_init = tservice.get_scores()
+                board = Board(nick, b_init, s_init, tservice)
+                #while True:
+                board.run()
+                 
+                server.shutdown()       # Stop the serve-forever loop
+                server.server_close()   # Close the sockets
+                LOG.info('Terminating ...')
                 mt.join()
+
+                break
                        
         
             if inpt == "s":

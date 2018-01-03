@@ -50,9 +50,9 @@ class RPCService():
 
     def ready(self):
         if len(self.players) == self.session_size:
-            True
+            return True
         else:
-            False
+            return False
 
     def get_sparse(self):
         return self.sudoku_sparse

@@ -15,7 +15,7 @@ import operator
 from Generation import *
 from client import *
 from threading import RLock
-
+from copy import deepcopy
 import logging
 FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -76,12 +76,12 @@ class Board():
                     go = self.game.game_over()
                     if go:
                         self.finished = True
-                    self.draw_table_score()
-                    self.draw_board_numbers()
+                 #   self.draw_table_score()
+                  #  self.draw_board_numbers()
                     
                 LOG.info("board updated")
                 
-            time.sleep(1)
+            time.sleep(0.5)
    
     def render_board(self):
         while not self.finished:
@@ -89,18 +89,20 @@ class Board():
             with self.render_lc:
                 self.draw_table_score()
                 self.draw_board_numbers()
-            time.sleep(0.5)
+            time.sleep(1)
 
     def run(self):
 
         l = Thread(target = self.listener)
         l.start()
+        r = Thread(target = self.render_board)
+        r.start()
         self.draw_table_score()
         self.draw_board_numbers()
-
         self.board.mainloop()
         self.finished = True
         l.join()
+        r.join()
 
 
     def initialize_frame(self):
