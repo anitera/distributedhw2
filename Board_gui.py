@@ -8,8 +8,9 @@ except ImportError:
 try:
     import tkMessageBox as tkBox
 except ImportError:
-    from tkinter import messagebox as tkBox	
-	
+    from tkinter import messagebox as tkBox
+
+from socket import error as soc_err	
 import numpy as np
 import operator
 from Generation import *
@@ -65,44 +66,61 @@ class Board():
 
 
     def listener(self):
-        while not self.finished:
-            board = self.game.get_sparse()
-            LOG.info("listener checking")
-            if not board == self.board_matrix:
-                scores = self.game.get_scores()
+        try:
+            while not self.finished:
                 with self.render_lc:
-                    self.table = scores
-                    self.board_matrix = board
-                    go = self.game.game_over()
-                    if go:
-                        self.finished = True
-                 #   self.draw_table_score()
-                  #  self.draw_board_numbers()
-                    
-                LOG.info("board updated")
-                
-            time.sleep(0.5)
+                    if not self.finished:
+                        board = self.game.get_sparse()
+                        scores = self.game.get_scores()
+                        LOG.info("listener checking")
+                        if not board == self.board_matrix:
+                            self.table = scores
+                            self.board_matrix = board
+                            go = self.game.game_over()
+                            if go:
+                                self.finished = True
+                         #   self.draw_table_score()
+                          #  self.draw_board_numbers()
+                                
+                            LOG.info("board updated")
+                        if not self.finished:
+                            self.draw_table_score()
+                            self.draw_board_numbers()
+
+
+                    time.sleep(0.5)
+        except soc_err as e:
+            LOG.info("Server end game!")
+            self.finished = True
+            time.sleep(3)
+            self.board.destroy()
+            return
+
    
     def render_board(self):
         while not self.finished:
-            LOG.info("new render")
             with self.render_lc:
-                self.draw_table_score()
-                self.draw_board_numbers()
-            time.sleep(1)
+                if not self.finished:
+                    LOG.info("new render")
+                    self.draw_table_score()
+                    self.draw_board_numbers()
+                    time.sleep(1)
 
     def run(self):
 
         l = Thread(target = self.listener)
         l.start()
-        r = Thread(target = self.render_board)
-        r.start()
+        #r = Thread(target = self.render_board)
+        #r.start()
         self.draw_table_score()
         self.draw_board_numbers()
         self.board.mainloop()
         self.finished = True
+        LOG.info("UI CLOSED")
         l.join()
-        r.join()
+        #LOG.info("Listener joined")
+        #r.join()
+        #LOG.info("Render joined")
 
 
     def initialize_frame(self):
@@ -222,3 +240,6 @@ class Board():
         sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
         tkBox.showinfo("Game is finished", "Winner is " + str(sorted_table[0][0]))
         self.board.destroy()
+
+
+

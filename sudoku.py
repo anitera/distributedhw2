@@ -43,11 +43,16 @@ BD = True
 GAME = True
 def advertise(s,name, maxp, port):
     ''' Broadcast the game '''
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_BROADCAST,1 ) 
+    
     msg = DELIM.join([name, str(maxp), port])
     global BD
     while BD:
         s.sendto(msg, ('<broadcast>',DEFAULT_SERVER_PORT))
         time.sleep(2)
+
+    s.close()
 
 def games_available(s, gamedict, sesslist):
     ''' List of games available '''
@@ -99,161 +104,136 @@ def render_gui(srv, gui):
 def run_server(server):
 
     server.serve_forever()
-
+    
+    LOG.info("RPC object die")
 
 if __name__ == '__main__':
 
     nick = enter_nickname()
 
-    print "Your nickname: ", nick
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    s.bind( ('', DEFAULT_SERVER_PORT ))
+   
+    inpt, dest = sessionStart(s)
+    server = None
 
-    try:
-        while True:
-            inpt = raw_input("Host \ search (h \ s): ")
-            if inpt == "h":
-                name = raw_input("Game name:")
-                maxp = int(raw_input("Num players:"))
+    if inpt == "host":
+        try:
+            s.close()
+            game_name = dest[0]
+            maxp = int(dest[1])
+            
+            #Random to ckeck different games on the one computer
+            port = "122" + str(random.randint(11,19))
 
-		#Socket broadcast to everyone
-                s = socket(AF_INET, SOCK_DGRAM)
-                s.setsockopt(SOL_SOCKET, SO_BROADCAST,1 )
-                #s.bind( ('',54545) )
-                
-                #Random to ckeck different games on the one computer
-                port = "122" + str(random.randint(11,19))
-                t = Thread(target=advertise, args = (s,name, maxp, port,))
-                t.start()
-                
+            #Socket broadcast to everyone 
+            t = Thread(target=advertise, args = (s, game_name, maxp, port,))
+            t.start()
+            
 
-		#Socket for waiting players
-                msock = socket(AF_INET, SOCK_STREAM)
-                msock.bind(("", int(port)))
-                msock.listen(maxp)
-                connected = 1
-                players = []
-                while connected < maxp:
-                    client, addr = msock.accept()
-
-                    print "conenction from ", addr, client
-                    connected +=1
-                    players.append(client)
-                    print "players ", connected,"/",maxp
-                
-                print "All players conencted! Game start!"
-                global BD
-                BD = False
-                t.join()
-                s.close()
-                
-                for ss in players:
-                    ss.send("game started!")
-
-		# Create RPC object
-                tservice = RPCService(name, maxp)
-                server = RPCThreading(("",int(port)+1 ), SimpleXMLRPCRequestHandler) #for working parallel
-                server.register_introspection_functions()
-
-                # Register all functions of the Transfer Service
-                server.register_instance(tservice)
-                
-                mt = Thread(target=run_server, args=(server,) )
-                mt.start()
-                
-
-#                board = Thread(target=render_board, args=(tservice,) )
- #               board.start()
-                
-                if tservice.add_player(nick):
-                    LOG.info("Player %s added", nick)
-
-             
-
-                while True:
-                    if tservice.ready():
-                        break
-                    else:
-                        time.sleep(0.5)
-                        LOG.info("checkready")
-  
-                LOG.info("All players connected!")
-                b_init = tservice.get_sparse()
-                s_init = tservice.get_scores()
-                board = Board(nick, b_init, s_init, tservice)
-                #while True:
-                board.run()
-                 
-                server.shutdown()       # Stop the serve-forever loop
-                server.server_close()   # Close the sockets
-                LOG.info('Terminating ...')
-                mt.join()
-
-                break
+            #Socket for waiting players
+            msock = socket(AF_INET, SOCK_STREAM)
+            msock.bind(("", int(port)))
+            msock.listen(maxp)
+            
+            
+            connected = 1
+            players = []
+            while connected < maxp:
+                client, addr = msock.accept()
+                LOG.info("Connection from %s:%d", addr[0],addr[1])
+                #print "conenction from ", addr, client
+                connected +=1
+                players.append(client)
+                LOG.info("Players %d/%d", connected, maxp)
+               # print "players ", connected,"/",maxp
+            
+            LOG.info("All players conencted! Game start!")
+            
+            global BD
+            BD = False
+            t.join()
                        
+            for p in players:
+                p.send("game started!")
+
+            # Create RPC object
+            tservice = RPCService(game_name, maxp)
+            server = RPCThreading(("",int(port)+1 ), SimpleXMLRPCRequestHandler) #for working parallel
+            server.register_introspection_functions()
+
+            # Register all functions of the Transfer Service
+            server.register_instance(tservice)
+            
+            mt = Thread(target=run_server, args=(server,) )
+            mt.start()
+            
+            if tservice.add_player(nick):
+                LOG.info("Player %s added", nick)
         
-            if inpt == "s":
-                
-               # host = "127.0.0." + str(random.randint(1,254))
+            while True:
+                if tservice.ready():
+                    break
+                else:
+                    time.sleep(0.5)
 
-                
-                s = socket(AF_INET, SOCK_DGRAM)
-                s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-                s.bind( ('', DEFAULT_SERVER_PORT ))
-                gamedict = {}
-                sesslist = []
-                
-               # t = Thread(target = games_available, args=(s, gamedict, sesslist,))
-                #t.start()
-
-                #k = int(raw_input("Session #:")) #random.randint(0, len(gamelist))
-                dest = sessionStart(sesslist, s)
-                print 'Port', dest[1]
-                print 'Host ', dest[0]
-
-               # dest = gamedict[s_ret[1]]
-
-                msock = socket(AF_INET, SOCK_STREAM)
-                msock.connect( (dest[0], int(dest[1])) )
-
-                resp = msock.recv(DEFAULT_RCV_BUFFSIZE)
-
-                print resp
-
-                global BD
-                BD = False
-                
-                try:
-        	    proxy = ServerProxy("http://%s:%d" % (dest[0], int(dest[1])+1))
-    		except KeyboardInterrupt:
-        	    LOG.warn('Ctrl+C issued, terminating')
-        	    exit(0)
-    		except Exception as e:
-        	    LOG.error('Communication error %s ' % str(e))
-        	    exit(1)
-
-		LOG.info('Connected to Mboard XMLRPC server!')
-
-                time.sleep(3)
+            LOG.info("All players connected to remote game object!")
+            b_init = tservice.get_sparse()
+            s_init = tservice.get_scores()
+            board = Board(nick, b_init, s_init, tservice)
+            
+            board.run()
+            
+            LOG.info("UI closed!")
 
 
-                gg = proxy.add_player(nick)
-                #    LOG.info("Player %s added", nick)
-                
-                b_init = proxy.get_sparse()
-                s_init = proxy.get_scores()
-                board = Board(nick, b_init, s_init, proxy)
-                #while True:
-                board.run()
-
-                break
-                
-
-
-    except KeyboardInterrupt:
-        #s.send(DELIM.join([DISCONNECT]))
-        s.close()
-        msock.close()
-        LOG.info('Ctrl+C issued, terminating ...')
+        except KeyboardInterrupt:
+            LOG.info('Ctrl+C issued, terminating ...')
+        finally:
+            msock.close()           #Close socket
+            LOG.info("Closing socket ...")
+            server.shutdown()       # Stop the serve-forever loop
+            server.server_close()   # Close the sockets
+            LOG.info('Terminating ...')
+            mt.join()       
     
-        server.shutdown()       # Stop the serve-forever loop
-        server.server_close()   # Close the sockets
-        LOG.info('Terminating ...')
+    if inpt == "player":
+        LOG.info("Connecting to %s:%s", dest[0], dest[1])
+        
+        msock = socket(AF_INET, SOCK_STREAM)
+        msock.connect( (dest[0], int(dest[1])) )
+
+        resp = msock.recv(DEFAULT_RCV_BUFFSIZE)
+
+        LOG.info(resp)
+        
+        try:
+            proxy = ServerProxy("http://%s:%d" % (dest[0], int(dest[1])+1))
+            LOG.info('Connected to Mboard XMLRPC server!')
+
+            time.sleep(3)
+            
+            if proxy.add_player(nick):
+                LOG.info("Connection successful")
+               
+            b_init = proxy.get_sparse()
+            s_init = proxy.get_scores()
+            board = Board(nick, b_init, s_init, proxy)
+            
+            board.run()
+
+        except KeyboardInterrupt:
+            LOG.warn('Ctrl+C issued, terminating')
+            exit(0)
+        except Exception as e:
+            LOG.error('Communication error %s ' % str(e))
+            exit(1)
+
+       
+
+            
+            
+
+
+

@@ -107,6 +107,10 @@ class RPCService():
 	LOG.info('matrix = {} ({}, {})'.format(board_ans[i][j], i, j))
 	LOG.info('value = {}'.format(value))
 	LOG.info('Checking cell...')
+        
+        if self.sudoku_sparse[cell[0]][cell[1]] > 0:
+            return not self.game_over()
+        
         if self.check_cell(cell, value):
             LOG.info("UPD BOARD & SCORES")
             self.scores[name] += 1

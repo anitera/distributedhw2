@@ -11,6 +11,7 @@ except ImportError:
 
 sessionname_return = ''
 sessuionsize_return = 0
+choice = ''
 
 from threading import Thread
 import select
@@ -22,6 +23,7 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
     current = listbox.curselection()
     global sessionname_return
     global sessionsize_return
+    global choice
     if current:
         print 'Decide to join existing session'
         sessionname = listbox.get(current[0])
@@ -29,7 +31,7 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
         window.destroy()
         sessionname_return = sessionname[0]
         sessionsize_return = sessionname[1]
-	
+	choice = "player"
     else:
         sessionname = sessions.get()
         sessionsize = number_of_players.get()
@@ -38,6 +40,7 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
         if validate_session_name_and_size(sessionname, sessionsize):
             print("Welcome,", sessionname)
             tkBox.showinfo("Connected!", "Have fun!")
+            choice = "host"
             window.destroy()
             sessionname_return = sessionname
             sessionsize_return = sessionsize
@@ -46,7 +49,7 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
             tkBox.showinfo("Session already booked", "try another session")
             sessions.delete(0, len(sessionname))
             sessions.insert(0, "")        
-
+        
 
 def validate_session_name_and_size(session_name, session_size):
     if len(session_name) == 0 or ' ' in session_name or len(session_name) > 8 or session_size == 0 or isinstance( session_size, ( int, long ) ):
@@ -82,11 +85,14 @@ def scan_sess(s, listbox, gamedict):
             for sess in sesslist:
                 listbox.insert(sessions_counter, sess)
                 sessions_counter += 1
+
+
+    print "scan thread die"
         
         
 
     
-def sessionStart(sessions, s):
+def sessionStart(s):
     window = tk.Tk()
 
     listbox_label_location_x = 10
@@ -116,11 +122,12 @@ def sessionStart(sessions, s):
     listbox_text.place(x = listbox_label_location_x, y = listbox_label_location_y)
     listbox = tk.Listbox(window)
 
-    sessions_counter = 0
+    #sessions_counter = 0
     #sessions_list = sorted(sessions_list) # Not neccessary
-    for sess in sessions:
-        listbox.insert(sessions_counter, sess)
-        sessions_counter += 1
+    #for sess in sessions:
+     #   listbox.insert(sessions_counter, sess)
+      #  sessions_counter += 1
+    
     listbox.place(x=listbox_label_x, y=listbox_label_y)
     session_text = tk.Label(text="Create new one. \n Enter session name:")
     session_text.place(x=session_label_x, y = session_label_y)
@@ -134,19 +141,26 @@ def sessionStart(sessions, s):
     number_of_players = tk.Entry()
     number_of_players.place(x=number_x, y=number_y)
 
-    a = tk.Button(window, text="Pick session", command=lambda: send_data_sessions(listbox, session, number_of_players, window))
+    a = tk.Button(window, text="Pick session", command=lambda: send_data_sessions(listbox, session,
+        number_of_players, window))
     a.config(height = button_height, width = button_width)
     a.place(x=button_x, y=button_y)
     gamedict = {}
     bdt = Thread(target = scan_sess, args = (s, listbox,gamedict))
     bdt.start()
     window.mainloop()
+    print "choice=", choice
     global scan
     scan = False
     bdt.join()
     global sessionname_return
     global sessionsize_return
-    return gamedict[sessionname_return]
+    if choice == "player":
+        print "return player"
+        return choice , gamedict[sessionname_return]
+    if choice == "host":
+        print "return host"
+        return choice, (sessionname_return, sessionsize_return)
 
 '''
 def show_sessions():
