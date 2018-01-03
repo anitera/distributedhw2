@@ -175,7 +175,6 @@ if __name__ == '__main__':
                 mt = Thread(target=run_server, args=(server,) )
                 mt.start()
                 
-                time.sleep(3)
 
                 board = Thread(target=render_board, args=(tservice,) )
                 board.start()
@@ -185,7 +184,11 @@ if __name__ == '__main__':
 
              
 
-                
+                while True:
+                    if tservice.ready():
+                        break
+                    else:
+                        time.sleep(0.5)
                 
                 '''
                 v = int(raw_input("value:"))
@@ -219,15 +222,15 @@ if __name__ == '__main__':
                 gamedict = {}
                 sesslist = []
                 
-                t = Thread(target = games_available, args=(s, gamedict, sesslist,))
-                t.start()
+               # t = Thread(target = games_available, args=(s, gamedict, sesslist,))
+                #t.start()
 
-                k = int(raw_input("Session #:")) #random.randint(0, len(gamelist))
-                s_ret = sessionStart(sesslist)
-                print 'Size of session', s_ret[0]
-                print 'Session name ', s_ret[1]
+                #k = int(raw_input("Session #:")) #random.randint(0, len(gamelist))
+                dest = sessionStart(sesslist, s)
+                print 'Port', dest[1]
+                print 'Host ', dest[0]
 
-                dest = gamedict[s_ret[1]]
+               # dest = gamedict[s_ret[1]]
 
                 msock = socket(AF_INET, SOCK_STREAM)
                 msock.connect( (dest[0], int(dest[1])) )
@@ -238,9 +241,7 @@ if __name__ == '__main__':
 
                 global BD
                 BD = False
-                t.join()
-
-
+                
                 try:
         	    proxy = ServerProxy("http://%s:%d" % (dest[0], int(dest[1])+1))
     		except KeyboardInterrupt:
@@ -252,63 +253,18 @@ if __name__ == '__main__':
 
 		LOG.info('Connected to Mboard XMLRPC server!')
 
+                time.sleep(3)
+
+
                 gg = proxy.add_player(nick)
                 #    LOG.info("Player %s added", nick)
-                
-                time.sleep(3)
                 
                 b_init = proxy.get_sparse()
                 s_init = proxy.get_scores()
                 board = Board(nick, b_init, s_init, proxy)
                 #while True:
                 board.run()
-                #board.draw_board_numbers()
-                #board.draw_table_score()
-              #  render_gui = Thread(target = render_gui, args=(proxy, board,))
-               # render_gui.start()
 
-               # while True:
-                   # board.draw_board_numbers()
-                    #board.draw_table_score()
-                  #  board.frame.mainloop()
-                  #  cell = board.get_last_move()
-                  #  v = cell[0]
-                  #  pos = cell[1]
-
-                  #  tt = proxy.play_turn(pos, v, nick)
-
-               # render_gui.join()
-
-                '''
-                board = Thread(target=render_board, args=(proxy,) )
-                board.start()
-
-
-                v = int(raw_input("value:"))
-                i = int(raw_input("i:"))
-                j = int(raw_input("j:"))
-
-                tt = proxy.play_turn((i,j),v,nick)
-
-                while tt:
-                    v = int(raw_input("value:"))
-                    i = int(raw_input("i:"))
-                    j = int(raw_input("j:"))
-
-                    tt = proxy.play_turn((i,j),v,nick)
-                    print tt
-                    time.sleep(1)
-
-                #s.sendto("Player1 connected!", (addr[0], 9999) )
-                
-                
-                #membership = inet_aton(DEFAULT_SERVER_INET_ADDR) + inet_aton(bind_addr)
-		#s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, membership)
-#		s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-
- #               s.bind( (bind_addr, DEFAULT_SERVER_PORT) )
-  #              data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
-                '''
                 break
                 
 
@@ -322,162 +278,3 @@ if __name__ == '__main__':
         server.shutdown()       # Stop the serve-forever loop
         server.server_close()   # Close the sockets
         LOG.info('Terminating ...')
-
-
-        #HP = HostPort()
-        #hostPortAuthorization(HP)
-        #host, port = HP.getHostPort()
-        #if port.isdigit():
-    #        port = int(port)
-     #       if s.connect_ex( (host, port) ) != 0:
-      #          print "Incorrect host address. Try again!"
-       #     else:
-        #        print "Connection established!"
-         #       break
-
-    #sessionStart() # session start window
-
-    print "Multiplayer Game"
-    flag_of_new_session = True
-
-    sessions  = pickle.loads(s.recv(buffer_length))
-      
-    for sess in sessions:
-        if s_ret[0] == sess[1]:
-            flag_of_new_session = False
-
-
-
-    # here we need to know id of our session and max number of clients
-    #current_session = ""
-    #if len(sessions) > 0:
-    #    print "Current session"
-    #    for ss in sessions:
-    #        print ss
-
-    #    sess_name = raw_input("choose sess name or 0 to procceed: ")
-    #    if sess_name == "0":
-    #        print "create a new sesson"
-    #        flag_of_new_session = True
-    #    else:
-    #        snames = [x[1] for x in sessions ] 
-    #        if sess_name in snames:
-    #            current_session = sess_name
-    #        else:
-    #            print "Session doesnt exist"
-    #else:
-    #    flag_of_new_session = True
-
-    #session_id = 0
-    # session_size = 4
-
-    if flag_of_new_session:
-        
-        s.send(DELIM.join([NEW_SESSION, s_ret[0], str(s_ret[1]), nick]))
-	
-    else: 
-        print "Session=", s_ret[0], " Nick=", nick
-        s.send(DELIM.join([OLD_SESSION, s_ret[0], nick]))
-	#s.send('1' + ' ' + nick + ' ' + str(session_id))
- 
-
-    '''getting session token, save it in client side and always send message with it
-    because server should recognize for which session data incoming
-    '''
-    try:
-        sess = s.recv(buffer_length)
-        print "Session token ", sess
-    except:
-        print "socket errot"
-
-    '''
-    rspn = s.recv(buffer_length)
-    
-    if rspn == GAME_START:
-        print "session started"
-        s.send(OK)
-    else:
-        print "session error"
-    '''
-
-    rspn = s.recv(buffer_length)
-    board = None
-    scores = None
-    if rspn == UPDATE_GAME:
-        
-        board = pickle.loads(s.recv(buffer_length) )
-
-        print "BOARD FOR GAME"
-        print board
-
-        scores = pickle.loads(s.recv(buffer_length) )
-
-        print "SCORES"
-        print scores
-        s.send(DELIM.join([UPDATE_GAME]))
-    else:
-        print "wrong request"
-        print rspn
-
-    game = GamePlaying(s, nick)
-    game.update_state(board)
-    game.update_scores(scores)
-    game.init_board()
-    time.sleep(random.randint(10,20))
-    
-    game.run()
-    game.update_board()
-    game.board.frame.mainloop()
-    #game.playing_game()
-    
-    '''
-    while True:
-        exit = int(raw_input("exit?"))
-        if exit == 1:
-            game.close()
-            break
-        elif game.get_status() == False:
-            game.close()
-            break
-    print "Thank you for playing!" 
-    '''
-    '''
-    try:
-        while True:
-            print "playing.."
-            time.sleep(10)
-            cell = list([random.randint(1,9), random.randint(1,9)])
-            value = random.randint(1,9)
-            data = DELIM.join([PLAY_TURN,str(cell[0]), str(cell[1]), str(value)] )
-            s.send(data)
-    except KeyboardInterrupt:
-        s.send(DELIM.join([DISCONNECT]))
-        s.close()
-    '''
-    # get current players and their score from session with dictionary table_score = { 'nickname': score}
-  #  table_score = {'olha': 0, 'slava': 0, 'rita': 0, 'vasya': 0}
-
-#    return_board(nick, host, port, session_id, session_size, table_score)
-
-
-
-    '''
-    s = socket(AF_INET, SOCK_STREAM)
-
-    server_address = (args.Host, int(args.port))
-
-    s.connect(server_address)
-    try:
-        s.send(args.nickname)
-    except socket.error:
-        #print 'Socket error'
-    try:
-        message = s.recv(buffer_length) 
-    except socket.error:
-        print 'Socket error'
-    print message
-
-    if message == "1":
-        print ""
-    '''
-    #s.close()

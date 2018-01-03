@@ -12,6 +12,10 @@ except ImportError:
 sessionname_return = ''
 sessuionsize_return = 0
 
+from threading import Thread
+import select
+from protocol import *
+from Tkinter import END
 
 def send_data_sessions(listbox, sessions, number_of_players, window): 
     print 'send data ', listbox, ' sess: ', sessions
@@ -23,8 +27,8 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
         sessionname = listbox.get(current[0])
         print("Session size is...", sessionname)
         window.destroy()
-        sessionname_return = sessionname[1]
-        sessionsize_return = sessionname[0]
+        sessionname_return = sessionname[0]
+        sessionsize_return = sessionname[1]
 	
     else:
         sessionname = sessions.get()
@@ -50,10 +54,39 @@ def validate_session_name_and_size(session_name, session_size):
     else:
         return True
 
+scan = True
+def scan_sess(s, listbox, gamedict):
+    ''' List of games available '''
+    s.setblocking(0)
+    sesslist = []
+    global scan
+    while scan:
+        ready = select.select([s],[],[],2)
+        if ready[0]:
+            data, addr = s.recvfrom(1024)
+        else:
+            continue
+        
+        msg = data.split(DELIM)
+        if (msg[0],msg[1]) not in sesslist:
+            print "server discovered!"
+            sesslist.append((msg[0], msg[1]))
+            gamedict[msg[0]] = ((addr[0],msg[2]))
+            print addr
+        
+            print "Available games"
 
+            sessions_counter = 0
+            listbox.delete(0,END)
+            #sessions_list = sorted(sessions_list) # Not neccessary
+            for sess in sesslist:
+                listbox.insert(sessions_counter, sess)
+                sessions_counter += 1
+        
+        
 
     
-def sessionStart(sessions):
+def sessionStart(sessions, s):
     window = tk.Tk()
 
     listbox_label_location_x = 10
@@ -104,10 +137,16 @@ def sessionStart(sessions):
     a = tk.Button(window, text="Pick session", command=lambda: send_data_sessions(listbox, session, number_of_players, window))
     a.config(height = button_height, width = button_width)
     a.place(x=button_x, y=button_y)
+    gamedict = {}
+    bdt = Thread(target = scan_sess, args = (s, listbox,gamedict))
+    bdt.start()
     window.mainloop()
+    global scan
+    scan = False
+    bdt.join()
     global sessionname_return
     global sessionsize_return
-    return (sessionname_return, sessionsize_return)
+    return gamedict[sessionname_return]
 
 '''
 def show_sessions():

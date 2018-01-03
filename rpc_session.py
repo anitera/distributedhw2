@@ -48,6 +48,12 @@ class RPCService():
     def get_total(self):
         return self.sudoku_full
 
+    def ready(self):
+        if len(self.players) == self.session_size:
+            True
+        else:
+            False
+
     def get_sparse(self):
         return self.sudoku_sparse
 

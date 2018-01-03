@@ -65,34 +65,43 @@ class Board():
 
 
     def listener(self):
-        while True:
+        while not self.finished:
             board = self.game.get_sparse()
             LOG.info("listener checking")
             if not board == self.board_matrix:
+                scores = self.game.get_scores()
                 with self.render_lc:
+                    self.table = scores
                     self.board_matrix = board
+                    go = self.game.game_over()
+                    if go:
+                        self.finished = True
+                    self.draw_table_score()
                     self.draw_board_numbers()
+                    
                 LOG.info("board updated")
                 
-            time.sleep(2)
+            time.sleep(1)
    
     def render_board(self):
-        while True:
+        while not self.finished:
             LOG.info("new render")
             with self.render_lc:
                 self.draw_table_score()
                 self.draw_board_numbers()
-            time.sleep(2)
+            time.sleep(0.5)
 
     def run(self):
 
         l = Thread(target = self.listener)
         l.start()
-        r = Thread(target = self.render_board)
-        r.start()
-        #self.board.after(1000, self.listener)
-        #self.board.after(1000, self.render_board)
+        self.draw_table_score()
+        self.draw_board_numbers()
+
         self.board.mainloop()
+        self.finished = True
+        l.join()
+
 
     def initialize_frame(self):
         self.lab = tk.Label(self.frame, text = self.head, justify = 'right', fg = 'navy', font=('Helvetica', 14))
@@ -141,6 +150,10 @@ class Board():
             self.canvas.delete("all")
             #self.frame.quit()
             tt = self.game.play_turn((a,b), value, self.nick)
+            if not tt:
+                self.finished  = True
+                self.draw_board_numbers()
+
         else:
             tkBox.showerror("Incorrect format", "Please enter number from 1 to 9")
 
