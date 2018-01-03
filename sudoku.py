@@ -41,15 +41,15 @@ DEFAULT_RCV_BUFFSIZE = 1024
 invited = ''
 BD = True
 GAME = True
-def advertise(s,p):
+def advertise(s,name, maxp, port):
     ''' Broadcast the game '''
-    gamename = p
+    msg = DELIM.join([name, str(maxp), port])
     global BD
     while BD:
-        s.sendto(gamename, ('<broadcast>',DEFAULT_SERVER_PORT))
+        s.sendto(msg, ('<broadcast>',DEFAULT_SERVER_PORT))
         time.sleep(2)
 
-def games_available(s, gamelist):
+def games_available(s, gamedict, sesslist):
     ''' List of games available '''
     global BD
     s.setblocking(0)
@@ -59,13 +59,15 @@ def games_available(s, gamelist):
             data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
         else:
             continue
-        if (addr[0],data) not in gamelist:
+        
+        msg = data.split(DELIM)
+        if (msg[0],msg[1]) not in sesslist:
             print "server discovered!"
-            gamelist.append((addr[0],data))
+            sesslist.append((msg[0], msg[1]))
+            gamedict[msg[0]] = ((addr[0],msg[2]))
             print addr
         
             print "Available games"
-            print gamelist
         
         time.sleep(2)
 
@@ -81,6 +83,18 @@ def render_board(srv):
                 print "|".join(str(x) for x in i)
                     
         time.sleep(1)
+
+def render_gui(srv, gui):
+    cboard = None
+    while GAME:
+        board = srv.get_sparse()
+        if not board == cboard:
+            cboard = deepcopy(board)
+            gui.set_board_numbers(cboard)
+            gui.draw_board_numbers()
+            LOG.info("board updated")
+        time.sleep(1)
+
 
 def run_server(server):
 
@@ -123,7 +137,7 @@ if __name__ == '__main__':
                 
                 #Random to ckeck different games on the one computer
                 port = "122" + str(random.randint(11,19))
-                t = Thread(target=advertise, args = (s,port,))
+                t = Thread(target=advertise, args = (s,name, maxp, port,))
                 t.start()
                 
 
@@ -172,7 +186,8 @@ if __name__ == '__main__':
              
 
                 
-
+                
+                '''
                 v = int(raw_input("value:"))
                 i = int(raw_input("i:"))
                 j = int(raw_input("j:"))
@@ -189,9 +204,10 @@ if __name__ == '__main__':
                     time.sleep(1)
 
                 board.join()
+                '''
                 mt.join()
                        
-
+        
             if inpt == "s":
                 
                # host = "127.0.0." + str(random.randint(1,254))
@@ -200,13 +216,19 @@ if __name__ == '__main__':
                 s = socket(AF_INET, SOCK_DGRAM)
                 s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                 s.bind( ('', DEFAULT_SERVER_PORT ))
-                gamelist = []
+                gamedict = {}
+                sesslist = []
                 
-                t = Thread(target = games_available, args=(s, gamelist,))
+                t = Thread(target = games_available, args=(s, gamedict, sesslist,))
                 t.start()
 
                 k = int(raw_input("Session #:")) #random.randint(0, len(gamelist))
-                dest = gamelist[k]
+                s_ret = sessionStart(sesslist)
+                print 'Size of session', s_ret[0]
+                print 'Session name ', s_ret[1]
+
+                dest = gamedict[s_ret[1]]
+
                 msock = socket(AF_INET, SOCK_STREAM)
                 msock.connect( (dest[0], int(dest[1])) )
 
@@ -234,7 +256,28 @@ if __name__ == '__main__':
                 #    LOG.info("Player %s added", nick)
                 
                 time.sleep(3)
+                
+                b_init = proxy.get_sparse()
+                s_init = proxy.get_scores()
+                board = Board(nick, b_init, s_init)
+                #board.draw_board_numbers()
+                #board.draw_table_score()
+                render_gui = Thread(target = render_gui, args=(proxy, board,))
+                render_gui.start()
 
+                while True:
+                   # board.draw_board_numbers()
+                    #board.draw_table_score()
+                    board.frame.mainloop()
+                    cell = board.get_last_move()
+                    v = cell[0]
+                    pos = cell[1]
+
+                    tt = proxy.play_turn(pos, v, nick)
+
+                render_gui.join()
+
+                '''
                 board = Thread(target=render_board, args=(proxy,) )
                 board.start()
 
@@ -263,7 +306,7 @@ if __name__ == '__main__':
 
  #               s.bind( (bind_addr, DEFAULT_SERVER_PORT) )
   #              data, addr = s.recvfrom(DEFAULT_RCV_BUFFSIZE)
-
+                '''
                 break
                 
 
@@ -296,11 +339,7 @@ if __name__ == '__main__':
     flag_of_new_session = True
 
     sessions  = pickle.loads(s.recv(buffer_length))
-    print sessions
-    s_ret = sessionStart(sessions)
-    print 'Size of session', s_ret[1]
-    print 'Session name ', s_ret[0]
-    
+      
     for sess in sessions:
         if s_ret[0] == sess[1]:
             flag_of_new_session = False

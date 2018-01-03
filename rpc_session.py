@@ -51,6 +51,9 @@ class RPCService():
     def get_sparse(self):
         return self.sudoku_sparse
 
+    def get_scores(self):
+        return self.scores
+
     def set_cell(self, cell, value):
         self.sudoku_sparse[cell[0]][cell[1]] = value
     
