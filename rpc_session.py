@@ -55,12 +55,13 @@ class RPCService():
         return self.scores
 
     def set_cell(self, cell, value):
+        LOG.info("SETTING CELL")
         self.sudoku_sparse[cell[0]][cell[1]] = value
     
     def check_cell(self, cell, value):
         cvalue = self.sudoku_full[cell[0]][cell[1]]
         print cvalue, value
-        if cvalue == value:
+        if int(cvalue) == int(value):
             return True
         else:
             return False
@@ -101,6 +102,7 @@ class RPCService():
 	LOG.info('value = {}'.format(value))
 	LOG.info('Checking cell...')
         if self.check_cell(cell, value):
+            LOG.info("UPD BOARD & SCORES")
             self.scores[name] += 1
             self.set_cell(cell, value)
         else: 

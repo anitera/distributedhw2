@@ -259,23 +259,25 @@ if __name__ == '__main__':
                 
                 b_init = proxy.get_sparse()
                 s_init = proxy.get_scores()
-                board = Board(nick, b_init, s_init)
+                board = Board(nick, b_init, s_init, proxy)
+                #while True:
+                board.run()
                 #board.draw_board_numbers()
                 #board.draw_table_score()
-                render_gui = Thread(target = render_gui, args=(proxy, board,))
-                render_gui.start()
+              #  render_gui = Thread(target = render_gui, args=(proxy, board,))
+               # render_gui.start()
 
-                while True:
+               # while True:
                    # board.draw_board_numbers()
                     #board.draw_table_score()
-                    board.frame.mainloop()
-                    cell = board.get_last_move()
-                    v = cell[0]
-                    pos = cell[1]
+                  #  board.frame.mainloop()
+                  #  cell = board.get_last_move()
+                  #  v = cell[0]
+                  #  pos = cell[1]
 
-                    tt = proxy.play_turn(pos, v, nick)
+                  #  tt = proxy.play_turn(pos, v, nick)
 
-                render_gui.join()
+               # render_gui.join()
 
                 '''
                 board = Thread(target=render_board, args=(proxy,) )

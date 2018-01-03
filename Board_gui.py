@@ -16,6 +16,11 @@ from Generation import *
 from client import *
 from threading import RLock
 
+import logging
+FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
+logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+LOG = logging.getLogger()
+
 
 lc_cell = RLock()
 g_cell = (0, (0,0) )
@@ -27,9 +32,10 @@ def get_gcell():
     return tmp
 
 class Board():
-    def __init__(self, nick, matrix=None, table=None, finished=False):
+    def __init__(self, nick, matrix=None, table=None, game=None, finished=False):
         self.board = tk.Tk()
         self.head = 'Username: ' + nick + '\n'
+        self.nick = nick
         self.cell_size = 60
         self.board_width = 15 * self.cell_size
         self.board_height = 9 * self.cell_size
@@ -50,7 +56,44 @@ class Board():
         self.finished = finished
         #some object with dictionary table_score
         self.v = tk.IntVar()
-    
+
+
+        #self.board_matrix = None
+        #self.table = None
+        self.game = game
+        self.render_lc = Lock()
+
+
+    def listener(self):
+        while True:
+            board = self.game.get_sparse()
+            LOG.info("listener checking")
+            if not board == self.board_matrix:
+                with self.render_lc:
+                    self.board_matrix = board
+                    self.draw_board_numbers()
+                LOG.info("board updated")
+                
+            time.sleep(2)
+   
+    def render_board(self):
+        while True:
+            LOG.info("new render")
+            with self.render_lc:
+                self.draw_table_score()
+                self.draw_board_numbers()
+            time.sleep(2)
+
+    def run(self):
+
+        l = Thread(target = self.listener)
+        l.start()
+        r = Thread(target = self.render_board)
+        r.start()
+        #self.board.after(1000, self.listener)
+        #self.board.after(1000, self.render_board)
+        self.board.mainloop()
+
     def initialize_frame(self):
         self.lab = tk.Label(self.frame, text = self.head, justify = 'right', fg = 'navy', font=('Helvetica', 14))
         self.lab.place(x = 11 * self.cell_size, y = 0.5 * self.cell_size)
@@ -96,7 +139,8 @@ class Board():
             tkBox.showinfo("Thanks", "Your move is proceed")
             ent.destroy()
             self.canvas.delete("all")
-            self.frame.quit()
+            #self.frame.quit()
+            tt = self.game.play_turn((a,b), value, self.nick)
         else:
             tkBox.showerror("Incorrect format", "Please enter number from 1 to 9")
 
