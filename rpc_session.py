@@ -47,6 +47,8 @@ class RPCService():
         for i in transp_answer:
             print "|".join(str(x) for x in i)
 
+   
+        
     def get_total(self):
         return self.sudoku_full
 
@@ -65,7 +67,7 @@ class RPCService():
 
     def set_cell(self, cell, value):
         LOG.info("SETTING CELL")
-        self.sudoku_sparse[cell[0]][cell[1]] = value
+        self.sudoku_sparse[cell[0]][cell[1]] = int(value)
     
     def check_cell(self, cell, value):
         cvalue = self.sudoku_full[cell[0]][cell[1]]

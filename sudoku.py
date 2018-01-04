@@ -67,7 +67,7 @@ def games_available(s, gamedict, sesslist):
         time.sleep(2)
 
 def render_board(srv):
-	'''Show board in console'''
+    '''Show board in console'''
     cboard = None
     while GAME:
         board = srv.get_sparse()
@@ -81,7 +81,7 @@ def render_board(srv):
         time.sleep(1)
 
 def render_gui(srv, gui):
-	'''Change numbers for GUI'''
+    '''Change numbers for GUI'''
     cboard = None
     while GAME:
         board = srv.get_sparse()
@@ -94,7 +94,7 @@ def render_gui(srv, gui):
 
 
 def run_server(server):
-	'''Run RPC srver in client-host'''
+    '''Run RPC srver in client-host'''
     server.serve_forever()
     
     LOG.info("RPC object die")
