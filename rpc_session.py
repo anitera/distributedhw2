@@ -42,7 +42,8 @@ class RPCService():
         LOG.info("RPC instance created!")
         print "Game answer!"
         print "___________________"
-        for i in answer:
+	transp_answer = map(list, zip(*answer))
+        for i in transp_answer:
             print "|".join(str(x) for x in i)
 
     def get_total(self):

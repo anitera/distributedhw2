@@ -148,9 +148,9 @@ class Board():
             self.canvas.delete("all")
 
             tt = self.game.play_turn((a,b), value, self.nick)
-            if not tt:
+            if not tt:2
                 self.finished  = True
-                self.draw_board_numbers()
+                self.end_game()
 
         else:
             tkBox.showerror("Incorrect format", "Please enter number from 1 to 9")
