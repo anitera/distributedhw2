@@ -196,7 +196,8 @@ if __name__ == '__main__':
             server.shutdown()       # Stop the serve-forever loop
             server.server_close()   # Close the sockets
             LOG.info('Terminating ...')
-            mt.join()       
+            mt.join() 
+            exit(0)
     
     if inpt == "player":
         LOG.info("Connecting to %s:%s", dest[0], dest[1])

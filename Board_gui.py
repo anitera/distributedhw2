@@ -93,7 +93,9 @@ class Board():
             LOG.info("Server end game!")
             self.finished = True
             time.sleep(3)
-            self.board.destroy()
+            self.end_game()
+            #self.board.destroy()
+        finally:
             return
 
    
@@ -118,7 +120,7 @@ class Board():
         self.finished = True
         LOG.info("UI CLOSED")
         l.join()
-        #LOG.info("Listener joined")
+        LOG.info("Listener joined")
         #r.join()
         #LOG.info("Render joined")
 
