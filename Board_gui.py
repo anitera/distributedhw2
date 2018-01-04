@@ -32,6 +32,7 @@ class Board():
     def __init__(self, nick, matrix=None, table=None, game=None, finished=False):
         self.board = tk.Tk()
         self.shutdown_event = Event()
+        self.terminated = Event()
         self.head = 'Username: ' + nick + '\n'
         self.nick = nick
         self.cell_size = 60
@@ -54,10 +55,7 @@ class Board():
         self.finished = finished
         #some object with dictionary table_score
         self.v = tk.IntVar()
-
-
-        #self.board_matrix = None
-        #self.table = None
+        
         self.game = game
         self.render_lc = Lock()
 
@@ -89,36 +87,26 @@ class Board():
             LOG.info("Server end game!")
             self.finished = True
             time.sleep(3)
+            self.terminated.set()
             self.end_game()
-            #self.board.destroy()
-
-   
-    def render_board(self):
-        while not self.finished:
-            with self.render_lc:
-                if not self.finished:
-                    LOG.info("new render")
-                    self.draw_table_score()
-                    self.draw_board_numbers()
-                    time.sleep(1)
-
+        
     def run(self):
 
         l = Thread(target = self.listener)
         l.start()
-        #r = Thread(target = self.render_board)
-        #r.start()
+        
         self.draw_table_score()
         self.draw_board_numbers()
         self.board.after(100, self.check_shutdown)
         self.board.mainloop()
+        
         self.finished = True
+        if not self.shutdown_event.is_set():
+            self.shutdown_event.set()
         LOG.info("UI CLOSED")
         l.join()
         LOG.info("Listener joined")
-        #r.join()
-        #LOG.info("Render joined")
-
+    
 
     def initialize_frame(self):
         self.lab = tk.Label(self.frame, text = self.head, justify = 'right', fg = 'navy', font=('Helvetica', 14))
@@ -228,9 +216,14 @@ class Board():
         
     def check_shutdown(self):
         if self.shutdown_event.is_set():
-            sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
-            tkBox.showinfo("Game is finished", "Winner is " + str(sorted_table[0][0]))
-            self.board.destroy()
+            if not self.terminated.is_set():
+                sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
+                tkBox.showinfo("Info", "Winner is " + str(sorted_table[0][0]))
+                self.board.destroy()
+            else:
+                tkBox.showinfo("Info", "Game has been dropped by host")
+                self.board.destroy()
+
         else:
             self.board.after(100, self.check_shutdown)
  
