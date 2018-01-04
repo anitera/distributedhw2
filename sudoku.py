@@ -1,34 +1,22 @@
-from socket import AF_INET, SOCK_STREAM, socket
-from argparse import ArgumentParser
-import curses
-import os
-from login import *
-from host_port_authorization import *
-from sessions_authorization import *
-from Board_gui import *
+import random
 import time
-buffer_length = 5024
+import select
+import struct
+
+from socket import AF_INET, SOCK_STREAM, socket,  SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR,  SO_BROADCAST
+from socket import error as soc_err
+
+from threading import Thread, Lock
+
 from xmlrpclib import ServerProxy
 
-from protocol import *
-import pickle
-import random
-from threading import Thread, Lock
-import signal
-from Board_gui import *
-from threading import Thread
-from argparse import ArgumentParser
-import socket
-from socket import AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR, SOL_IP, SOCK_STREAM, SO_BROADCAST
-from socket import IPPROTO_IP, IP_MULTICAST_LOOP, IP_MULTICAST_TTL, INADDR_ANY, IPPROTO_UDP
-from socket import inet_aton, IP_ADD_MEMBERSHIP, socket
-from socket import error as soc_err
-import struct
-import sys
-import thread
+from login import *
+from sessions_authorization import sessionStart
+from Board_gui import Board
+
+from protocol import DELIM
 from rpc_session import *
-import select
-from copy import deepcopy
+
 import logging
 FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -41,6 +29,8 @@ DEFAULT_RCV_BUFFSIZE = 1024
 invited = ''
 BD = True
 GAME = True
+
+
 def advertise(s,name, maxp, port):
     ''' Broadcast the game '''
     s = socket(AF_INET, SOCK_DGRAM)
@@ -116,7 +106,7 @@ if __name__ == '__main__':
     s.bind( ('', DEFAULT_SERVER_PORT ))
    
     inpt, dest = sessionStart(s)
-    server = None
+    
 
     if inpt == "host":
         try:
@@ -190,9 +180,10 @@ if __name__ == '__main__':
 
         except KeyboardInterrupt:
             LOG.info('Ctrl+C issued, terminating ...')
-        finally:
+        finally: 
             msock.close()           #Close socket
             LOG.info("Closing socket ...")
+            time.sleep(3)
             server.shutdown()       # Stop the serve-forever loop
             server.server_close()   # Close the sockets
             LOG.info('Terminating ...')

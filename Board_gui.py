@@ -10,31 +10,28 @@ try:
 except ImportError:
     from tkinter import messagebox as tkBox
 
-from socket import error as soc_err	
-import numpy as np
-import operator
+
 from Generation import *
-from client import *
-from threading import RLock
+
+
+import time
+import operator
+import numpy as np
 from copy import deepcopy
+from socket import error as soc_err	
+from threading import *
+
+
 import logging
 FORMAT = '%(asctime)-15s %(levelname)s %(threadName)s %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 LOG = logging.getLogger()
 
 
-lc_cell = RLock()
-g_cell = (0, (0,0) )
-
-def get_gcell():
-    tmp = None
-    with lc_cell:
-        tmp = g_cell
-    return tmp
-
 class Board():
     def __init__(self, nick, matrix=None, table=None, game=None, finished=False):
         self.board = tk.Tk()
+        self.shutdown_event = Event()
         self.head = 'Username: ' + nick + '\n'
         self.nick = nick
         self.cell_size = 60
@@ -72,20 +69,19 @@ class Board():
                     if not self.finished:
                         board = self.game.get_sparse()
                         scores = self.game.get_scores()
+
                         LOG.info("listener checking")
                         if not board == self.board_matrix:
                             self.table = scores
                             self.board_matrix = board
+                        
                             go = self.game.game_over()
                             if go:
                                 self.finished = True
-                         #   self.draw_table_score()
-                          #  self.draw_board_numbers()
                                 
-                            LOG.info("board updated")
-                        if not self.finished:
-                            self.draw_table_score()
-                            self.draw_board_numbers()
+                        LOG.info("board updated")
+                        self.draw_table_score()
+                        self.draw_board_numbers()
 
 
                     time.sleep(0.5)
@@ -95,8 +91,6 @@ class Board():
             time.sleep(3)
             self.end_game()
             #self.board.destroy()
-        finally:
-            return
 
    
     def render_board(self):
@@ -116,6 +110,7 @@ class Board():
         #r.start()
         self.draw_table_score()
         self.draw_board_numbers()
+        self.board.after(100, self.check_shutdown)
         self.board.mainloop()
         self.finished = True
         LOG.info("UI CLOSED")
@@ -160,17 +155,10 @@ class Board():
         if value in [str(i) for i in range(1,10)]:
         
             self.last_move = (value, (a, b))
-            global lc_cell, g_cell
-            with lc_cell:
-                print "put into g_cell"
-                g_cell = self.last_move
-                print "g_cell=", g_cell
-
-
             tkBox.showinfo("Thanks", "Your move is proceed")
             ent.destroy()
             self.canvas.delete("all")
-            #self.frame.quit()
+
             tt = self.game.play_turn((a,b), value, self.nick)
             if not tt:
                 self.finished  = True
@@ -238,10 +226,15 @@ class Board():
     def set_table(self, table):
         self.table = table
         
+    def check_shutdown(self):
+        if self.shutdown_event.is_set():
+            sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
+            tkBox.showinfo("Game is finished", "Winner is " + str(sorted_table[0][0]))
+            self.board.destroy()
+        else:
+            self.board.after(100, self.check_shutdown)
+ 
     def end_game(self):
-        sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
-        tkBox.showinfo("Game is finished", "Winner is " + str(sorted_table[0][0]))
-        self.board.destroy()
-
+        self.shutdown_event.set()
 
 
