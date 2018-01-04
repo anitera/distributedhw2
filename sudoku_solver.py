@@ -5,6 +5,7 @@
 from itertools import product
 
 def solve_sudoku(size, grid):
+    ''' solving the sudoku '''
 
     R, C = size
     N = R * C

@@ -19,6 +19,7 @@ from protocol import *
 from Tkinter import END
 
 def send_data_sessions(listbox, sessions, number_of_players, window): 
+    ''' authorization of the session '''
     print 'send data ', listbox, ' sess: ', sessions
     current = listbox.curselection()
     global sessionname_return
@@ -52,6 +53,7 @@ def send_data_sessions(listbox, sessions, number_of_players, window):
         
 
 def validate_session_name_and_size(session_name, session_size):
+    ''' set new session '''
     if len(session_name) == 0 or ' ' in session_name or len(session_name) > 8 or session_size == 0 or isinstance( session_size, ( int, long ) ):
         return False
     else:
@@ -93,6 +95,7 @@ def scan_sess(s, listbox, gamedict):
 
     
 def sessionStart(s):
+    ''' session GUI '''
     window = tk.Tk()
 
     listbox_label_location_x = 10
@@ -121,12 +124,6 @@ def sessionStart(s):
     listbox_text = tk.Label(text = "Join exesting session")
     listbox_text.place(x = listbox_label_location_x, y = listbox_label_location_y)
     listbox = tk.Listbox(window)
-
-    #sessions_counter = 0
-    #sessions_list = sorted(sessions_list) # Not neccessary
-    #for sess in sessions:
-     #   listbox.insert(sessions_counter, sess)
-      #  sessions_counter += 1
     
     listbox.place(x=listbox_label_x, y=listbox_label_y)
     session_text = tk.Label(text="Create new one. \n Enter session name:")
@@ -162,33 +159,6 @@ def sessionStart(s):
         print "return host"
         return choice, (sessionname_return, sessionsize_return)
 
-'''
-def show_sessions():
-    for id, sess in enumerate(sessions_list):
-        print id, sess
-
-def load_sessions(sessions_list, sessions_size): 
-    content = (sessions_list, sessions_size)
-    print content
-    show_sessions()
-
-    if len(sessions_list) > 0:
-        for id, sess in enumerate(sessions_list):
-        print id, sess
-        return True
-    else:
-	print 'There are no sessions yet, please create new'
-        return False
-
-def sessionStart(sessions, load=True):
-    #session_chosen = Session_Authorization()
-    print 'session_chosen', sessions
-    if load:
-        load_sessions()
-    sessionsAuthorization(sessions_list, sessions)
-    return session_chosen.getSessionId()
-
-'''
 
 if __name__== "__main__":
     sessions = [('ses1', 5), ('ses2', 6), ('ses3', 7)]

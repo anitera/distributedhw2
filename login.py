@@ -13,6 +13,7 @@ nicknames = []
 authorizedNickname = ""
 
 class Nickname:
+    ''' correspond for the GUI of nicknames '''
     def __init__(self):
         self.name = ""
         self.passed = False
@@ -24,6 +25,7 @@ class Nickname:
         return self.name
 
 def send_data(listbox, nickname_entry, window, nick):
+    ''' send an entering data to the client '''
     current = listbox.curselection()
     if current:
         nickname = listbox.get(current[0])
@@ -47,6 +49,7 @@ def send_data(listbox, nickname_entry, window, nick):
         nickname_entry.insert(0, "")
  
 def authorization(users_list, nick):
+    ''' GIU window for nicknames '''
     window = tk.Tk()
     listbox_label_location_x = 10
     listbox_label_location_y = 10
@@ -82,16 +85,19 @@ def authorization(users_list, nick):
     window.mainloop()
 
 def validate_nickname(nickname):
+    ''' check the lenght of nickname '''
     if len(nickname) == 0 or ' ' in nickname or len(nickname) > 8:
         return False
     else:
         return True
 		
 def show_nicknames():
+    ''' show nicknames in GUI window '''
     for id, nick in enumerate(nicknames):
         print id, nick
 
 def load_nicknames(): 
+    ''' load nicknames '''
     if os.path.exists("client.ini"):
         with open("client.ini", "r+") as cli:
             for id, nick in enumerate(cli.readlines()):
@@ -106,6 +112,7 @@ def load_nicknames():
         return False
 
 def enter_nickname(load=True):
+    ''' authorize a new client with a new name in sudoku '''
     nick = Nickname()
     if load:
 	    load_nicknames()
