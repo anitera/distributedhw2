@@ -29,6 +29,7 @@ LOG = logging.getLogger()
 
 
 class Board():
+	''' Main GUI playing window '''
     def __init__(self, nick, matrix=None, table=None, game=None, finished=False):
         self.board = tk.Tk()
         self.shutdown_event = Event()
@@ -61,6 +62,7 @@ class Board():
 
 
     def listener(self):
+	''' Listen for opdates of the board'''
         try:
             while not self.finished:
                 with self.render_lc:
@@ -139,6 +141,7 @@ class Board():
         return self.last_move
     
     def EnterVal(self, e, a, b, ent):
+		''' Enter value to the sudoku '''
         value = e.get()
         if value in [str(i) for i in range(1,10)]:
         
@@ -159,6 +162,7 @@ class Board():
         return self.v.get()
 
     def Click(self, x):
+		''' Small processing window '''
         cell_column = (x.x) // self.cell_size
         cell_row = (x.y) // self.cell_size
         enter_number = tk.Tk()
@@ -174,6 +178,7 @@ class Board():
         button1.pack()
         
     def draw_board_numbers(self):
+		''' Redraw the numbers '''
         self.initialize_frame()
         self.draw_table_score()
         self.initialize_board()
@@ -197,6 +202,7 @@ class Board():
             self.end_game()
         
     def draw_table_score(self):
+		''' Redraw the table score '''
         self.table_score_listbox = tk.Listbox(self.frame)
         self.table_score_listbox.place(x = int(11.5 * self.cell_size), y = int(3 * self.cell_size))
         table_name = tk.Label(self.frame, text="NAME    SCORE",fg = 'navy', font=('Helvetica', 13))
@@ -215,6 +221,7 @@ class Board():
         self.table = table
         
     def check_shutdown(self):
+		''' Handle the shutdown of the window '''
         if self.shutdown_event.is_set():
             if not self.terminated.is_set():
                 sorted_table = sorted((self.table).items(), key=operator.itemgetter(1), reverse=True)
