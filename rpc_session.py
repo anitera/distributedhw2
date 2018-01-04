@@ -27,6 +27,7 @@ class RPCThreading(SocketServer.ThreadingMixIn, SimpleXMLRPCServer): pass
 
 class RPCService():  
     def __init__(self, gamename, size):
+	'''Service for processing game'''
 	self.gamesession = gamename
 	self.session_size = size
 	self.players = [] # {}
@@ -40,7 +41,7 @@ class RPCService():
 	self.sudoku_sparse = question
 
         LOG.info("RPC instance created!")
-        print "Game answer!"
+        print "Game answer!"			#Answer for the host to simplify the veryfying checking process
         print "___________________"
 	transp_answer = map(list, zip(*answer))
         for i in transp_answer:
@@ -50,6 +51,7 @@ class RPCService():
         return self.sudoku_full
 
     def ready(self):
+	'''Checking if all players connected'''
         if len(self.players) == self.session_size:
             return True
         else:
@@ -74,6 +76,7 @@ class RPCService():
             return False
 
     def game_over(self):
+	'''Checking for game ending'''
         if self.sudoku_full == self.sudoku_sparse:
             return True
         else:
@@ -81,6 +84,7 @@ class RPCService():
 
 
     def add_player(self, name):
+	'''Add player to the game'''
 	#self.players[name] = socket
         if name not in self.players:
             self.players.append(name)
@@ -92,6 +96,7 @@ class RPCService():
         return True
 
     def remove_player(self, name, socket):
+	'''Remove player from the game'''
 	del self.players[name]
 	LOG.info('Player %s disconected', name)
 
@@ -100,6 +105,7 @@ class RPCService():
 	return self.status
 
     def play_turn(self, cell, value, name):
+	'''Processing the turn of the player'''
 	i = int(cell[0])
         j = int(cell[1])
         LOG.info('Player {} put in cell ({}, {}): value {}'.format(name, i, j, value))
@@ -124,11 +130,6 @@ class RPCService():
         return not self.game_over()
 
 
-    def update_clients_scores(self):
-        LOG.info('Update........score')
-
-    def update_game(self):
-        LOG.info('Update......game')
 
 
 	
