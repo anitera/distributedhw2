@@ -67,6 +67,7 @@ def games_available(s, gamedict, sesslist):
         time.sleep(2)
 
 def render_board(srv):
+	'''Show board in console'''
     cboard = None
     while GAME:
         board = srv.get_sparse()
@@ -80,6 +81,7 @@ def render_board(srv):
         time.sleep(1)
 
 def render_gui(srv, gui):
+	'''Change numbers for GUI'''
     cboard = None
     while GAME:
         board = srv.get_sparse()
@@ -92,29 +94,32 @@ def render_gui(srv, gui):
 
 
 def run_server(server):
-
+	'''Run RPC srver in client-host'''
     server.serve_forever()
     
     LOG.info("RPC object die")
 
 if __name__ == '__main__':
 
+	#GUI nickname
     nick = enter_nickname()
 
+	#socket for broadcast
     s = socket(AF_INET, SOCK_DGRAM)
     s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     s.bind( ('', DEFAULT_SERVER_PORT ))
-   
+
+	#session GUI, if create new game session - return 'host', if choose existing - 'player', dest - name and size of the session (tuple) 
     inpt, dest = sessionStart(s)
     
 
-    if inpt == "host":
+    if inpt == "host":     #means that this client is host for this game and start the rpc server
         try:
             s.close()
             game_name = dest[0]
             maxp = int(dest[1])
             
-            #Random to ckeck different games on the one computer
+            #Random to check different games on the one computer
             port = "122" + str(random.randint(11,19))
 
             #Socket broadcast to everyone 
@@ -190,7 +195,7 @@ if __name__ == '__main__':
             mt.join() 
             exit(0)
     
-    if inpt == "player":
+    if inpt == "player":    #players connected to the host-client
         LOG.info("Connecting to %s:%s", dest[0], dest[1])
         
         msock = socket(AF_INET, SOCK_STREAM)
